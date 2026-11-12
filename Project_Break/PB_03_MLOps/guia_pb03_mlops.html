@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Break 3 — MLOps: API, datos y deploy</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --indigo:    #4F46E5;
+            --violet:    #7C3AED;
+            --sky:       #0EA5E9;
+            --lavender:  #C7D2FE;
+            --lilac:     #EDE9FE;
+            --amber:     #F59E0B;
+            --amber-lt:  #FEF3C7;
+            --green:     #10B981;
+            --green-lt:  #D1FAE5;
+            --rose:      #F43F5E;
+            --rose-lt:   #FFE4E6;
+            --cream:     #FAFAFA;
+            --white:     #FFFFFF;
+            --text-dark: #1E1B4B;
+            --text-mid:  #4C4A7A;
+            --text-lt:   #8B87B5;
+            --shadow:    rgba(79, 70, 229, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', -apple-system, sans-serif;
+            background: var(--cream);
+            color: var(--text-dark);
+            line-height: 1.75;
+            overflow-x: hidden;
+        }
+
+        /* ── HEADER ─────────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 60%, #0EA5E9 100%);
+            padding: 5rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute; top: -80px; right: -80px;
+            width: 320px; height: 320px;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute; bottom: -100px; left: -100px;
+            width: 360px; height: 360px;
+            background: radial-gradient(circle, rgba(14,165,233,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .header-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.4);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.4rem 1.2rem;
+            border-radius: 50px;
+            margin-bottom: 1.5rem;
+            position: relative; z-index: 1;
+        }
+        h1 {
+            font-size: 3.2rem; font-weight: 800;
+            color: #fff;
+            line-height: 1.15;
+            position: relative; z-index: 1;
+            text-shadow: 0 2px 16px rgba(0,0,0,0.2);
+            margin-bottom: 1rem;
+        }
+        .header-sub {
+            color: rgba(255,255,255,0.85);
+            font-size: 1.2rem; font-weight: 500;
+            position: relative; z-index: 1;
+        }
+        .header-pills {
+            display: flex; flex-wrap: wrap; gap: 0.75rem;
+            justify-content: center;
+            margin-top: 2rem;
+            position: relative; z-index: 1;
+        }
+        .pill {
+            background: rgba(255,255,255,0.18);
+            border: 1.5px solid rgba(255,255,255,0.35);
+            color: #fff;
+            font-size: 0.9rem; font-weight: 600;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+        }
+
+        /* ── NAV ─────────────────────────────────────────── */
+        nav {
+            background: var(--white);
+            padding: 1.2rem 2rem;
+            border-bottom: 3px solid var(--lavender);
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+        nav ul { list-style: none; display: flex; flex-wrap: wrap; gap: 2.5rem; justify-content: center; }
+        nav a {
+            color: var(--text-mid); text-decoration: none;
+            font-weight: 600; font-size: 1rem;
+            padding: 0.4rem 0;
+            position: relative; transition: color 0.3s;
+        }
+        nav a:hover { color: var(--indigo); }
+        nav a::after {
+            content: ''; position: absolute; bottom: -2px; left: 0;
+            width: 0; height: 3px;
+            background: linear-gradient(90deg, var(--indigo), var(--violet));
+            border-radius: 2px; transition: width 0.3s;
+        }
+        nav a:hover::after { width: 100%; }
+
+        /* ── CONTAINER & SECTIONS ────────────────────────── */
+        .container { max-width: 1160px; margin: 0 auto; padding: 2rem; }
+
+        section {
+            margin: 2.5rem 0;
+            padding: 2.5rem;
+            background: var(--white);
+            border-radius: 20px;
+            border: 2.5px solid var(--lavender);
+            box-shadow: 0 8px 28px var(--shadow);
+        }
+
+        h2 {
+            font-size: 2.1rem; font-weight: 800;
+            color: var(--indigo);
+            margin-bottom: 2rem;
+            display: flex; align-items: center; gap: 0.9rem;
+        }
+        h2::before {
+            content: '';
+            width: 8px; height: 2.2rem;
+            background: linear-gradient(to bottom, var(--indigo), var(--sky));
+            border-radius: 4px; flex-shrink: 0;
+        }
+        h3 {
+            font-size: 1.55rem; font-weight: 700;
+            color: var(--violet);
+            margin: 2.5rem 0 1rem;
+        }
+        h4 {
+            font-size: 1.2rem; font-weight: 700;
+            color: var(--indigo);
+            margin: 1.75rem 0 0.75rem;
+        }
+        p { margin-bottom: 1.25rem; color: var(--text-mid); }
+        strong { color: var(--text-dark); font-weight: 700; }
+
+        ul, ol { margin: 1rem 0 1.25rem 2rem; color: var(--text-mid); }
+        li { margin: 0.6rem 0; }
+
+        /* ── CODE ────────────────────────────────────────── */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--lilac);
+            color: var(--violet);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.88em;
+            border: 1.5px solid var(--lavender);
+        }
+        pre {
+            background: #1E1B4B;
+            padding: 1.5rem 1.75rem;
+            border-radius: 14px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border: 2px solid #312E8D;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            color: #C7D2FE;
+            font-size: 0.92rem; line-height: 1.85;
+        }
+        .cmd-block {
+            background: #1E1B4B;
+            border-left: 5px solid var(--sky);
+            padding: 1.25rem 1.5rem;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #BAE6FD;
+            font-size: 0.92rem;
+            margin: 1.25rem 0;
+        }
+        .cmd-block::before { content: '$ '; color: var(--sky); font-weight: 700; }
+
+        /* ── CALLOUTS ────────────────────────────────────── */
+        .warning {
+            background: var(--rose-lt);
+            border-left: 5px solid var(--rose);
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px; margin: 1.5rem 0;
+        }
+        .warning::before {
+            content: '⚠️  Importante';
+            display: block; font-weight: 700;
+            color: var(--rose); margin-bottom: 0.5rem;
+        }
+        .tip {
+            background: var(--green-lt);
+            border-left: 5px solid var(--green);
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px; margin: 1.5rem 0;
+        }
+        .tip::before {
+            content: '💡 Consejo';
+            display: block; font-weight: 700;
+            color: var(--green); margin-bottom: 0.5rem;
+        }
+        .info {
+            background: var(--lavender);
+            border-left: 5px solid var(--indigo);
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px; margin: 1.5rem 0;
+            color: var(--text-dark);
+        }
+        .info::before {
+            content: 'ℹ️  Nota';
+            display: block; font-weight: 700;
+            color: var(--indigo); margin-bottom: 0.5rem;
+        }
+        .optional-badge {
+            display: inline-block;
+            background: var(--amber-lt);
+            color: #92400E;
+            border: 1.5px solid var(--amber);
+            font-size: 0.8rem; font-weight: 700;
+            padding: 0.2rem 0.7rem;
+            border-radius: 50px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* ── GRID & CARDS ────────────────────────────────── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem; margin: 1.5rem 0;
+        }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+
+        .card {
+            background: linear-gradient(135deg, #FAFAFE 0%, var(--lilac) 100%);
+            border: 2px solid var(--lavender);
+            border-radius: 16px; padding: 1.75rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--indigo);
+            box-shadow: 0 12px 28px rgba(79,70,229,0.18);
+        }
+        .card h4 { margin-top: 0; }
+
+        /* ── PARTE HEADER CARDS ──────────────────────────── */
+        .parte-header {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.5rem 2rem;
+            border-radius: 16px; margin-bottom: 2rem;
+            border: 2px solid;
+        }
+        .parte-num {
+            font-size: 2.5rem; font-weight: 800;
+            line-height: 1; flex-shrink: 0;
+        }
+        .parte-1 { background: #EEF2FF; border-color: var(--indigo); }
+        .parte-1 .parte-num { color: var(--indigo); }
+        .parte-2 { background: #F0F9FF; border-color: var(--sky); }
+        .parte-2 .parte-num { color: var(--sky); }
+        .parte-3 { background: var(--lilac); border-color: var(--violet); }
+        .parte-3 .parte-num { color: var(--violet); }
+        .parte-4 { background: var(--amber-lt); border-color: var(--amber); }
+        .parte-4 .parte-num { color: #92400E; }
+        .parte-header-text h3 { margin: 0; font-size: 1.3rem; }
+        .parte-header-text p { margin: 0.25rem 0 0; font-size: 0.95rem; }
+
+        /* ── TASK LIST ───────────────────────────────────── */
+        .task-list { list-style: none; margin-left: 0; }
+        .task-list li {
+            padding: 0.7rem 0.75rem 0.7rem 2.75rem;
+            position: relative;
+            border-bottom: 1.5px solid var(--lavender);
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .task-list li:last-child { border-bottom: none; }
+        .task-list li:hover { color: var(--indigo); }
+        .task-list li::before {
+            content: '';
+            position: absolute; left: 0.6rem; top: 50%;
+            transform: translateY(-50%);
+            width: 20px; height: 20px;
+            border: 2.5px solid var(--lavender);
+            border-radius: 5px;
+            background: var(--white);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 0.8rem; font-weight: 800; line-height: 1;
+            transition: all 0.2s;
+        }
+        .task-list li.done {
+            color: var(--text-lt);
+            text-decoration: line-through;
+            text-decoration-color: var(--lavender);
+        }
+        .task-list li.done::before {
+            content: '✓';
+            background: linear-gradient(135deg, var(--indigo), var(--violet));
+            border-color: var(--indigo);
+        }
+
+        /* ── PIPELINE DIAGRAM ────────────────────────────── */
+        .branch-diagram {
+            font-family: 'JetBrains Mono', monospace;
+            background: #1E1B4B;
+            color: #C7D2FE;
+            padding: 1.75rem 2rem;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 2.1;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border: 2px solid #312E8D;
+        }
+        .b-main  { color: #34D399; font-weight: 700; }
+        .b-dev   { color: #60A5FA; font-weight: 700; }
+        .b-feat  { color: #F9A8D4; font-weight: 700; }
+        .b-node  { color: #FCD34D; }
+        .b-arrow { color: #818CF8; }
+        .b-pr    { color: #F59E0B; font-weight: 700; }
+
+        /* ── STEP FLOW ───────────────────────────────────── */
+        .steps { display: flex; flex-direction: column; gap: 0; margin: 1.5rem 0; }
+        .step {
+            display: flex; gap: 1.25rem; align-items: flex-start;
+            padding: 1.25rem 0;
+            border-bottom: 1.5px dashed var(--lavender);
+        }
+        .step:last-child { border-bottom: none; }
+        .step-num {
+            flex-shrink: 0;
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--indigo), var(--violet));
+            color: #fff; font-weight: 800; font-size: 0.9rem;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-top: 0.1rem;
+        }
+        .step-content h4 { margin: 0 0 0.4rem; }
+        .step-content p { margin: 0; }
+
+        /* ── PR TEMPLATE CARD ────────────────────────────── */
+        .pr-template {
+            background: #F8FAFF;
+            border: 2px dashed var(--indigo);
+            border-radius: 14px;
+            padding: 1.5rem 1.75rem;
+            margin: 1.25rem 0;
+        }
+        .pr-template h4 { margin-top: 0; }
+
+        /* ── TABLE ───────────────────────────────────────── */
+        table {
+            width: 100%; border-collapse: collapse;
+            margin: 1.5rem 0; border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px var(--shadow);
+            border: 2px solid var(--lavender);
+        }
+        th {
+            background: linear-gradient(135deg, var(--indigo), var(--violet));
+            color: #fff; padding: 1rem 1.25rem;
+            text-align: left; font-weight: 700;
+        }
+        td { padding: 1rem 1.25rem; border-top: 1.5px solid var(--lavender); color: var(--text-mid); }
+        tr:hover { background: #F5F3FF; }
+
+        /* ── DELIVERABLES BOX ────────────────────────────── */
+        .deliverables {
+            background: linear-gradient(135deg, #EEF2FF, var(--lilac));
+            border: 2.5px solid var(--indigo);
+            border-radius: 16px; padding: 2rem;
+            margin: 1.5rem 0;
+        }
+        .deliverables h4 { margin-top: 0; color: var(--indigo); }
+
+        /* ── EVAL AREA CARDS ─────────────────────────────── */
+        .eval-area {
+            border: 2px solid var(--lavender);
+            border-left: 6px solid var(--indigo);
+            border-radius: 14px;
+            padding: 1.5rem 1.75rem;
+            margin: 1.25rem 0;
+            background: #FCFCFF;
+        }
+        .eval-area h4 { margin: 0 0 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .pct-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--indigo), var(--violet));
+            color: #fff;
+            font-size: 0.85rem; font-weight: 800;
+            padding: 0.15rem 0.75rem;
+            border-radius: 50px;
+            margin-left: auto;
+        }
+        .pct-badge.bonus { background: linear-gradient(135deg, var(--amber), #D97706); }
+        .eval-area ul { margin: 0.5rem 0 0 1.5rem; }
+        .eval-area.a-tecnico { border-left-color: var(--indigo); }
+        .eval-area.a-present { border-left-color: var(--sky); }
+        .eval-area.a-git     { border-left-color: var(--violet); }
+        .eval-area.a-equipo  { border-left-color: var(--green); }
+        .eval-area.a-memoria { border-left-color: var(--amber); }
+        .eval-area.a-extra   { border-left-color: var(--rose); }
+
+        /* ── FOOTER ──────────────────────────────────────── */
+        footer {
+            text-align: center; padding: 3rem 2rem;
+            color: var(--text-lt);
+            border-top: 3px solid var(--lavender);
+            background: var(--white); margin-top: 3rem;
+        }
+        footer p { color: var(--text-lt); margin-bottom: 0.25rem; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            nav ul { flex-direction: column; gap: 1rem; align-items: center; }
+            section { padding: 1.5rem; }
+            .grid { grid-template-columns: 1fr; }
+            .parte-num { font-size: 1.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-badge">Bootcamp IA Generativa</div>
+    <h1>Project Break 3 · MLOps: API, datos y deploy</h1>
+    <p class="header-sub">El agente del PB2, publicado: API + PostgreSQL + Docker + Render · Duración: 2 semanas</p>
+    <div class="header-pills">
+        <span class="pill">🚀 FastAPI</span>
+        <span class="pill">🐘 PostgreSQL</span>
+        <span class="pill">🐳 Docker</span>
+        <span class="pill">☁️ Render</span>
+        <span class="pill">🔐 API key</span>
+        <span class="pill">📊 Streamlit</span>
+    </div>
+</header>
+
+<nav>
+    <ul>
+        <li><a href="#contexto">Contexto</a></li>
+        <li><a href="#git-flow">Git &amp; equipo</a></li>
+        <li><a href="#capacidades">Capacidades</a></li>
+        <li><a href="#partes">Partes 1–4</a></li>
+        <li><a href="#entregables">Entregables</a></li>
+        <li><a href="#evaluacion">Evaluación</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+
+<section id="contexto" style="background: linear-gradient(135deg,#EEF2FF,var(--lilac)); border-color: var(--indigo);">
+<h2>¿De qué va este proyecto?</h2>
+<p><strong>Entrega:</strong> como tarde el <strong>26/11 hasta las 23:59</strong>.</p>
+<p><strong>Presentación:</strong> viernes <strong>4 de diciembre, de 16:00 a 18:00</strong>.
+Publicar en equipo el <strong>agente del Project Break 2</strong>: una API REST con FastAPI (y su Swagger), el agente detrás de esa API, historial en <strong>PostgreSQL</strong>, imagen <strong>Docker</strong>, despliegue en <strong>Render</strong> y un <strong>front</strong> que consume la URL pública.
+Esta práctica integra MLOps para IA generativa:</p>
+<ul>
+<li><strong>FastAPI, contrato Pydantic, agente detrás de <code>/ask</code> y historial SQL</strong> (Sprint 14)</li>
+<li><strong>API key, rate limit, timeout, CORS y logs</strong> (Sprint 15)</li>
+<li><strong>Docker, Render, Postgres managed y lectura de costes</strong> (Sprint 16). El CI/CD de ese sprint aquí no es obligatorio.</li>
+</ul>
+<hr />
+<h3>Una pieza de un puzzle</h3>
+<p>Este Project Break es la <strong>tercera pieza</strong> de un proyecto incremental del bootcamp:</p>
+<table>
+<thead>
+<tr>
+<th>Pieza</th>
+<th>Proyecto</th>
+<th>Rol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td><a href="../PB_01_RAG/">Project Break RAG</a></td>
+<td>Sistema RAG modular y usable</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><a href="../PB_02_Agentes_LangGraph/">Project Break Agentes · LangGraph</a></td>
+<td>Ese RAG como <strong>tool</strong> de un agente multiagente</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td><strong>Project Break MLOps</strong></td>
+<td>Ese agente, publicado: API + PostgreSQL + Docker + Render</td>
+</tr>
+</tbody>
+</table>
+<p>Partís del <strong>mismo equipo, el mismo dominio y el código del PB2</strong>. El RAG sigue siendo una tool. El trabajo de estas dos semanas es <strong>sacarlo de la máquina local</strong> y dejarlo como servicio.</p>
+<p>Misma arquitectura que los workouts y la live review de los Sprints 14–16 (API cultural / calidad del aire). Aquí el dominio es el vuestro.</p>
+<pre><code class="language-text">Front Streamlit (en local)
+        │  HTTPS   API_BASE_URL = URL de Render
+        ▼
+FastAPI  +  agente PB2  +  RAG          ← un solo contenedor en Render
+        │  /health   /docs   /ask   /approve   /threads/{id}/messages
+        │  DATABASE_URL
+        ▼
+PostgreSQL managed (Render)
+</code></pre>
+<hr />
+<h3>Objetivos generales</h3>
+<p>Dejar el agente del PB2 como un servicio que:</p>
+<ol>
+<li>Expone una <strong>API REST</strong> con FastAPI y la documentación viva en <strong>Swagger</strong> (<code>/docs</code>).</li>
+<li>Mete el agente <strong>dentro</strong> de la API (<code>POST /ask</code>, <code>POST /approve</code>), sin reescribir el grafo.</li>
+<li>Guarda el historial de turnos cerrados en <strong>PostgreSQL</strong> (SQLModel).</li>
+<li>Viaja en <strong>una imagen Docker</strong> (API + agente + RAG en el mismo contenedor).</li>
+<li>Está <strong>desplegado en Render</strong> (Web Service + Postgres), con secretos en el panel.</li>
+<li>Se <strong>usa desde un front</strong> apuntando a esa URL pública.</li>
+</ol>
+<hr />
+</section>
+<section id="git-flow">
+<h2>Trabajo en equipo y Git</h2>
+<p>Gestión del proyecto con <strong>GitHub desde el primer día</strong>. La organización interna la decidís vosotros.</p>
+<p>Podéis crear un <strong>repo nuevo</strong> y copiar el código del PB2, o seguir en el mismo repo si <code>main</code> del PB2 queda etiquetado y este trabajo vive en ramas claras. El README de entrega tiene que arrancar <strong>este</strong> servicio, no solo el CLI del PB2.</p>
+<h3>Reglas mínimas</h3>
+<ul>
+<li>Crear el <strong>repositorio en GitHub</strong> al inicio del proyecto.</li>
+<li><strong>Mínimo una PR revisada y mergeada por miembro</strong> del equipo.</li>
+<li>Integrar con <strong>pull requests</strong> hacia <code>develop</code>; resolver conflictos en la rama antes del merge.</li>
+<li><strong>No subir claves</strong> — usar <code>.env</code> y <code>.gitignore</code>. En Render, las claves van en el panel del servicio.</li>
+<li>README del repo: clonar, Postgres en local, variables, <code>docker build</code> / <code>docker run</code>, URL de Render, cómo abrir Swagger y cómo arrancar el front contra esa URL.</li>
+</ul>
+<h3>Buenas prácticas con Git</h3>
+<table>
+<thead>
+<tr>
+<th>Rama</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main</code></td>
+<td>Código estable y el que Render despliega. <strong>No trabajéis directamente aquí.</strong></td>
+</tr>
+<tr>
+<td><code>develop</code></td>
+<td>Integración del equipo.</td>
+</tr>
+<tr>
+<td>Ramas secundarias</td>
+<td>Una por bloque de trabajo, desde <code>develop</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Convención de ramas</strong> (ejemplos):</p>
+<ul>
+<li><code>feature/api-ask</code></li>
+<li><code>feature/postgres-historial</code></li>
+<li><code>feature/dockerfile</code></li>
+<li><code>feature/front-url-render</code></li>
+<li><code>fix/port-render</code></li>
+<li><code>update/requirements</code></li>
+</ul>
+<pre><code class="language-text">develop ──► feature/tu-tarea ──► commits ──► PR ──► merge a develop
+       └──► cuando todo esté listo ──► merge a main ──► Render redespliega
+</code></pre>
+<ul>
+<li>Commits <strong>pequeños y con mensaje claro</strong>.</li>
+<li><strong>Nunca</strong> subáis <code>.env</code>, <code>.venv/</code>, dumps de Postgres ni secretos.</li>
+<li>Antes de mergear a <code>main</code>, <code>develop</code> debe poder levantar la API en local (Docker) y pasar el CI.</li>
+</ul>
+<hr />
+<h3>Forma de trabajo · Spec-Driven Development (SDD)</h3>
+<p><strong>SDD forma parte de cómo afrontar este Project Break.</strong> Acordad por escrito el contrato HTTP (rutas, bodies, códigos) <strong>antes</strong> de pedir código al asistente. Así no os reescribe el grafo ni mete la lógica del agente dentro del front.</p>
+<p>No es un ítem del checklist de entrega ni un porcentaje de la rúbrica base. Si dejáis evidencia clara en el repo o en el informe, puede sumar en <strong>Extras</strong>.</p>
+<hr />
+<h3>Estructura de proyecto</h3>
+<p>Ejemplo <strong>orientativo</strong>. Los nombres pueden variar; la separación, no.</p>
+<pre><code class="language-text">project_break_mlops/
+├── README.md
+├── requirements.txt
+├── Dockerfile
+├── .dockerignore
+├── .env.example
+├── .gitignore
+├── config.py                 # DATABASE_URL, API_KEY, timeout, CORS, límites
+├── app.py                    # FastAPI: rutas
+├── schemas.py                # AskIn, AskOut, ApproveIn, MessageOut
+├── security.py               # API key, rate limit (o módulos equivalentes)
+├── src/
+│   ├── db.py                 # engine, create_all, sesión
+│   ├── models.py             # SQLModel: Conversation y Message recomendadas; las tablas que necesitéis
+│   ├── agent.py              # procesar_turno / aprobar_plan  (PB2)
+│   ├── graph.py              # grafo del PB2
+│   └── tools/                # allowlist del PB2
+├── rag/                      # RAG del PB1/PB2, dentro de la imagen
+├── data/
+├── front/
+│   └── streamlit_app.py      # cliente HTTP. No importa el grafo.
+└── entregables/
+    └── informe_decisiones.md
+</code></pre>
+<p>En este proyecto <strong><code>app.py</code> es la API</strong>. El front vive aparte y solo habla HTTP.</p>
+<hr />
+<h3>De qué partís (PB2)</h3>
+<p>Reutilizad el agente que ya funciona:</p>
+<ul>
+<li>Grafo multiagente, tools (RAG completo, API externa, auxiliar, multimodal) y allowlist.</li>
+<li><code>procesar_turno</code> y la decisión humana (<code>aprobar</code> / <code>rechazar</code>).</li>
+<li>Límites en Python (<code>max_turns</code>, <code>max_steps</code>, <code>done</code>).</li>
+<li>Checkpointer <strong><code>MemorySaver</code></strong> en el proceso. El historial de producto pasa a Postgres; el checkpoint del grafo <strong>sigue en memoria</strong>.</li>
+</ul>
+<p>Un reinicio del servicio pierde un HITL a medias. El historial SQL no. Explicadlo en el informe en un párrafo. Llevar el checkpoint de LangGraph a Postgres queda fuera.</p>
+<p>El dominio sigue siendo el del PB1/PB2. Los dominios de clase (agenda cultural, calidad del aire) no sustituyen al vuestro.</p>
+<hr />
+</section>
+<section id="capacidades">
+<h2>Capacidades del sistema</h2>
+
+<h3>1. API REST y Swagger</h3>
+<p>FastAPI con contrato Pydantic. Swagger (<code>GET /docs</code>) se genera solo y tiene que abrir <strong>sin API key</strong>, en local y en la URL de Render.</p>
+<table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>¿<code>api_key</code>?</th>
+<th>Qué hace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/health</code></td>
+<td>No</td>
+<td>Pulso. Incluye que el almacenamiento es Postgres</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/docs</code></td>
+<td>No</td>
+<td>Swagger con los schemas</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/ask</code></td>
+<td><strong>Sí</strong></td>
+<td>Un turno del agente</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/approve</code></td>
+<td><strong>Sí</strong></td>
+<td>HITL: aprobar o rechazar el plan</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/threads/{thread_id}/messages</code></td>
+<td><strong>Sí</strong></td>
+<td>Historial leído de Postgres</td>
+</tr>
+</tbody>
+</table>
+<p>Contrato alineado con el Sprint 14 (los nombres exactos pueden ser los vuestros si el comportamiento es este):</p>
+<ul>
+<li><strong>AskIn:</strong> <code>pregunta</code>, <code>thread_id</code>, <code>auto_aprobar</code> (por defecto <code>true</code>, cómodo para probar en Swagger).</li>
+<li><strong>AskOut:</strong> <code>respuesta</code>, <code>thread_id</code>, <code>done</code>, <code>pendiente_hitl</code>, <code>error</code>.</li>
+<li><strong>ApproveIn:</strong> <code>thread_id</code>, <code>aprobado</code> (<code>true</code> aprueba, <code>false</code> rechaza).</li>
+<li><strong>MessageOut:</strong> <code>role</code>, <code>content</code>, y el orden temporal.</li>
+</ul>
+<p><code>/health</code> y <code>/docs</code> públicos. El resto exige <code>api_key</code> (query, como en los workouts, para poder probarlo en Swagger). Sin clave → <strong>401</strong>. Body inválido → <strong>422</strong>.</p>
+<h3>2. El agente, dentro de la API</h3>
+<p><code>POST /ask</code> llama a <code>procesar_turno</code> (o equivalente). <code>POST /approve</code> llama a la decisión humana del PB2.</p>
+<ul>
+<li>Con <code>auto_aprobar=true</code>, si el grafo queda en HITL la API cierra el turno sola (útil en Swagger).</li>
+<li>Con <code>auto_aprobar=false</code>, la respuesta vuelve con <code>pendiente_hitl=true</code> y el front usa <code>POST /approve</code>.</li>
+<li>Las tools siguen siendo reales: una pregunta de dominio tiene que poder apoyarse en el RAG o en la API externa.</li>
+<li>Los límites y <code>done</code> los sigue decidiendo Python.</li>
+</ul>
+<h3>3. PostgreSQL</h3>
+<p>El historial vive en PostgreSQL, con SQLModel. El modelo de datos lo diseñáis vosotros, según lo que el producto necesite guardar.</p>
+<p>Como punto de partida recomendado, dos tablas cubren el turno: <strong><code>Conversation</code></strong> y <strong><code>Message</code></strong>, unidas por <code>thread_id</code>. Podéis añadir las tablas que os hagan falta (por ejemplo usuario, feedback o traza de tools). <code>create_all</code> al arrancar es suficiente.</p>
+<pre><code class="language-text">POST /ask
+  1. asegura la conversación de ese thread_id
+  2. ejecuta el turno
+  3. si el turno queda cerrado (done): guarda user + assistant y hace commit
+GET /threads/{thread_id}/messages
+  → los mensajes de ese hilo, en orden
+</code></pre>
+<p><code>DATABASE_URL</code> sale del entorno.</p>
+<ul>
+<li><strong>Local:</strong> Postgres de verdad (un contenedor Docker, o la URL externa de Render mientras desarrolláis).</li>
+<li><strong>Render:</strong> Postgres managed. La URL va en el panel, no en el repo.</li>
+<li>Render a veces entrega <code>postgres://…</code>. SQLAlchemy quiere <code>postgresql://…</code>: normalizad el prefijo en <code>config.py</code> y añadid el driver (<code>psycopg2-binary</code> o <code>psycopg</code>).</li>
+</ul>
+<p>La demo y el servicio público usan Postgres.</p>
+<p><strong>Prueba que pedimos:</strong> un turno cerrado en la URL pública, redeploy (o reinicio), y <code>GET …/messages</code> sigue devolviendo ese turno.</p>
+<h3>4. Seguridad y logs (para poder publicarlo)</h3>
+<p>Lo visto en el Sprint 15, con los mismos códigos:</p>
+<table>
+<thead>
+<tr>
+<th>Situación</th>
+<th>Código</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sin <code>api_key</code> o clave incorrecta en ruta protegida</td>
+<td><strong>401</strong></td>
+</tr>
+<tr>
+<td>Servicio sin <code>API_KEY</code> configurada</td>
+<td><strong>503</strong></td>
+</tr>
+<tr>
+<td>Por encima de <code>RATE_LIMIT_PER_MINUTE</code></td>
+<td><strong>429</strong></td>
+</tr>
+<tr>
+<td>El turno supera <code>ASK_TIMEOUT_SECONDS</code></td>
+<td><strong>504</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>CORS abierto a lo que necesite el front (<code>CORS_ORIGINS</code>).</li>
+<li>Un log por petición protegida: método, ruta, <code>thread_id</code>, <code>duration_ms</code>, status. Sin <code>API_KEY</code>, sin la clave del LLM y sin la connection string.</li>
+<li>El <strong>429</strong> se demuestra en local contra una ruta que no gasta LLM (<code>GET …/messages</code> vale). En Render la variable queda puesta y documentada.</li>
+<li>El <strong>504</strong> se demuestra en local bajando el timeout; en Render dejáis un valor con margen para un turno real del multiagente (en clase, el ejemplo holgado es 300 s).</li>
+</ul>
+<h3>5. Docker</h3>
+<p>Una imagen. Dentro van la API, el agente, el corpus y el índice del RAG (construido en el <code>docker build</code> o al arrancar; documentad cuál).</p>
+<ul>
+<li><code>Dockerfile</code> + <code>.dockerignore</code> (sin <code>.env</code>, sin <code>.venv</code>, sin <code>.git</code>).</li>
+<li>El proceso escucha en <code>0.0.0.0</code> y en el puerto <code>${PORT:-8000}</code>. Render inyecta <code>PORT</code>.</li>
+<li><code>docker build</code> y <code>docker run</code> en local, con <code>DATABASE_URL</code> apuntando al Postgres, tienen que responder en <code>/health</code>.</li>
+</ul>
+<h3>6. Render</h3>
+<p>Un <strong>Web Service</strong> (la imagen) y un <strong>PostgreSQL</strong> en la misma cuenta.</p>
+<p>Variables en el panel, como mínimo:</p>
+<ul>
+<li><code>DATABASE_URL</code></li>
+<li><code>API_KEY</code></li>
+<li>clave del LLM (<code>GEMINI_API_KEY</code> o la del proveedor que ya uséis)</li>
+<li><code>CORS_ORIGINS</code></li>
+<li><code>ASK_TIMEOUT_SECONDS</code></li>
+<li><code>RATE_LIMIT_PER_MINUTE</code></li>
+</ul>
+<p>El push a <code>main</code> redespliega (auto-deploy de Render). Con eso basta: no pedimos un pipeline de CI/CD.</p>
+<h3>7. Front de la API desplegada</h3>
+<p>Streamlit en <strong>local</strong>. En la demo final, <code>API_BASE_URL</code> es la URL de Render, no <code>localhost</code>.</p>
+<p>El front tiene que poder mostrar:</p>
+<ul>
+<li>el estado que devuelve <code>GET /health</code> (servicio vivo y Postgres);</li>
+<li>un chat que hace <code>POST /ask</code>;</li>
+<li>el historial del <code>thread_id</code>, leído con <code>GET …/messages</code> (sale de Postgres, no de una lista solo en memoria del front);</li>
+<li><strong>Aprobar</strong> y <strong>Rechazar</strong>, llamando a <code>POST /approve</code> con <code>auto_aprobar=false</code> en el turno;</li>
+<li>el <code>thread_id</code> visible. «Nueva conversación» = otro <code>thread_id</code>.</li>
+</ul>
+<p>La <code>API_KEY</code> va en el <code>.env</code> del front, igual que en clase. El front no importa <code>graph.py</code> ni ejecuta tools.</p>
+<hr />
+<h3>Requisitos obligatorios</h3>
+<ol>
+<li>FastAPI con las rutas de la tabla y Swagger en <code>/docs</code> (local y Render).</li>
+<li>El agente del PB2 responde por <code>/ask</code> y se cierra por <code>/approve</code> (o <code>auto_aprobar</code>).</li>
+<li>PostgreSQL en local y en Render. Historial que sobrevive a un redeploy.</li>
+<li>API key, 401 / 429 / 504, CORS y log con <code>thread_id</code> + <code>duration_ms</code>.</li>
+<li>Un <code>Dockerfile</code> que respeta <code>PORT</code> y lleva el RAG dentro.</li>
+<li>URL pública de Render, <strong>enviada al profesorado</strong> para que podamos entrar (<code>/docs</code>, <code>/health</code>, y la API key de demo por el canal de entrega). Secretos fuera del repo.</li>
+<li>Front Streamlit contra esa URL: health, chat, historial, HITL.</li>
+<li>README + <code>.env.example</code> + <code>requirements.txt</code>.</li>
+<li>Informe en <code>entregables/</code> y presentación ~10 min (<strong>sólo se permite un vídeo por grupo</strong>).</li>
+</ol>
+<hr />
+<h3>Fuera de alcance</h3>
+<p>Kubernetes · JWT / OAuth · Redis · Alembic · varias réplicas · desplegar el propio Streamlit · base vectorial en la nube · un servicio RAG aparte · checkpoint de LangGraph en Postgres · cambiar de dominio · rehacer el multiagente desde cero.</p>
+<p><strong>CI/CD no es obligatorio.</strong> GitHub Actions (tests, <code>docker build</code> en cada push) no forma parte de la entrega. Si lo montáis, puede sumar como extra.</p>
+<hr />
+</section>
+<section id="partes">
+<h2>Partes del proyecto</h2>
+
+<div class="parte-header parte-1">
+<div class="parte-num">01</div>
+<div class="parte-header-text"><h3>Contrato y agente dentro de la API</h3><p>el PB2 responde por HTTP en local, y Swagger lo enseña.</p></div>
+</div>
+<ol>
+<li>Fijar rutas, bodies y códigos (la tabla de arriba) en el README.</li>
+<li>Pydantic: <code>AskIn</code>, <code>AskOut</code>, <code>ApproveIn</code>, <code>MessageOut</code>.</li>
+<li><code>POST /ask</code> y <code>POST /approve</code> llaman al agente que ya tenéis.</li>
+<li>Probar en <code>http://127.0.0.1:8000/docs</code> un turno con <code>auto_aprobar=true</code>.</li>
+</ol>
+<p><strong>Criterios de aceptación:</strong></p>
+<ul class="task-list">
+<li><code>/docs</code> lista las rutas y los schemas</li>
+<li>Un <code>/ask</code> con clave devuelve <code>AskOut</code> y se nota una tool real (RAG o API)</li>
+<li><code>auto_aprobar=false</code> deja <code>pendiente_hitl=true</code>; <code>/approve</code> cierra o rechaza</li>
+</ul>
+<hr />
+<div class="parte-header parte-2" style="margin-top:2.5rem;">
+<div class="parte-num">02</div>
+<div class="parte-header-text"><h3>PostgreSQL</h3><p>el turno cerrado queda en una base de verdad, no en un fichero que Render va a borrar.</p></div>
+</div>
+<ol>
+<li>Modelo de datos propio. Recomendamos <code>Conversation</code> y <code>Message</code> como base, y las tablas extra que el producto necesite. <code>DATABASE_URL</code>. Normalizar <code>postgres://</code>.</li>
+<li>Guardar user + assistant cuando el turno cierra.</li>
+<li><code>GET /threads/{thread_id}/messages</code>.</li>
+<li>Postgres en local. <code>/health</code> indica almacenamiento Postgres.</li>
+</ol>
+<p><strong>Criterios de aceptación:</strong></p>
+<ul class="task-list">
+<li>Tras reiniciar el proceso, el GET sigue devolviendo el turno</li>
+<li>Dos <code>thread_id</code> distintos no mezclan mensajes</li>
+</ul>
+<hr />
+<div class="parte-header parte-3" style="margin-top:2.5rem;">
+<div class="parte-num">03</div>
+<div class="parte-header-text"><h3>Seguridad, logs y front</h3><p>la API se puede enseñar, y el front ya habla con ella.</p></div>
+</div>
+<ol>
+<li><code>api_key</code>, rate limit, timeout, CORS.</li>
+<li>Log de <code>thread_id</code> y <code>duration_ms</code>.</li>
+<li>Front: health, chat, historial desde la API, Aprobar / Rechazar.</li>
+</ol>
+<p><strong>Criterios de aceptación:</strong></p>
+<ul class="task-list">
+<li>401, 429 y 504 se ven en local (el 429 y el 504, como dice la sección 4)</li>
+<li>El front, apuntando a la API local, aprueba o rechaza un plan</li>
+</ul>
+<hr />
+<div class="parte-header parte-4" style="margin-top:2.5rem;">
+<div class="parte-num">04</div>
+<div class="parte-header-text"><h3>Docker, Render, informe y cierre</h3><p>la misma API, en una URL pública, y el front apuntando ahí.</p></div>
+</div>
+<ol>
+<li><code>Dockerfile</code>. <code>docker run</code> en local contra Postgres.</li>
+<li>Web Service + Postgres en Render. Variables en el panel.</li>
+<li>Comprobar en la URL pública: <code>/docs</code>, <code>/health</code>, <code>/ask</code> con tool, <code>GET messages</code>.</li>
+<li>Redeploy. El mensaje sigue.</li>
+<li>Front con <code>API_BASE_URL</code> = URL de Render. Repetir un turno y un HITL.</li>
+<li>Enviar al profesorado la URL del servicio (y la API key de demo por el canal de entrega) para que podamos entrar.</li>
+<li>
+<p>Informe en <code>entregables/informe_decisiones.md</code> con al menos:</p>
+<ol>
+<li><strong>Dibujo</strong> del sistema desplegado (front, API, Postgres, LLM)</li>
+<li><strong>Contrato:</strong> qué es público y qué lleva <code>api_key</code></li>
+<li><strong>Datos:</strong> qué hay en Postgres y qué se pierde si el proceso reinicia (<code>MemorySaver</code>)</li>
+<li><strong>Prueba de vida:</strong> turno, redeploy, el GET sigue. Pegad la URL que enviáis al profesorado</li>
+<li><strong>Conclusiones de arquitectura y coste</strong>, sobre vuestro servicio en Render (una página como mucho):<ul>
+<li>qué piezas hay (front local, un Web Service con API + agente + RAG, Postgres) y por qué la API va en un solo contenedor</li>
+<li>un límite que hayáis notado de verdad (cold start, RAM, timeout o cuota del LLM) y qué efecto tuvo en la demo</li>
+<li>escalado: el primer paso si hubiera más usuarios (subir plan) y qué no montáis (varias réplicas, colas)</li>
+<li>dos facturas, con un orden de magnitud: infra (web + Postgres) y tokens de un <code>/ask</code></li>
+</ul>
+</li>
+<li><strong>Conclusiones de CI/CD.</strong> No hace falta tener GitHub Actions. Sobre vuestro repo y vuestra URL:<ul>
+<li>qué comprobaríais antes de cada deploy: un test que no llama al LLM y un <code>docker build</code></li>
+<li>dónde están los secretos (panel de Render y <code>.env</code> local) y por qué no van al repositorio ni a los logs</li>
+<li>cómo desplegáis ahora (push a <code>main</code> y Render redespliega) y qué es un rollback en vuestro caso (volver al deploy anterior)</li>
+<li>qué separa desarrollo de producción: la máquina local frente a las variables del servicio</li>
+</ul>
+</li>
+<li><strong>3 fallos</strong> y qué haríais después</li>
+</ol>
+</li>
+</ol>
+<p><strong>Criterios de aceptación:</strong></p>
+<ul class="task-list">
+<li><code>https://&lt;vuestro-servicio&gt;.onrender.com/docs</code> abre</li>
+<li><code>/health</code> en esa URL habla de Postgres</li>
+<li>Un turno sobrevive a un redeploy</li>
+<li>El front de la demo usa esa URL</li>
+<li>La URL (y la API key de demo, fuera del repo) está enviada al profesorado</li>
+<li>No hay secretos en el repo</li>
+</ul>
+<hr />
+<h3>Experimentos opcionales <span class="optional-badge">Opcional</span></h3>
+<p>No sustituyen los requisitos. Si os sobra tiempo, documentad 1–3 en el informe:</p>
+<ul class="task-list">
+<li><strong>CI con GitHub Actions</strong> (no obligatorio): un job que corra checks sin llamar al LLM, y otro con <code>docker build</code></li>
+<li><strong>Pregunta in-corpus y abstención</strong> disparadas desde Swagger en la URL pública</li>
+<li><strong>Multimodal</strong> desde el front, con la imagen que ya va en la imagen Docker</li>
+<li><strong>Uso sostenido de SDD</strong> (el contrato HTTP escrito antes del código, visible en el repo)</li>
+</ul>
+<hr />
+</section>
+<section id="entregables">
+<h2>Entregables y cierre</h2>
+<div class="deliverables"><h4>📦 Entregables finales</h4><div class="info"><strong>Fecha límite de entrega: 26/11, hasta las 23:59.</strong> Con la URL del despliegue, el repositorio y el informe ya entregados a esa hora.</div>
+<ol>
+<li><strong>Repositorio GitHub</strong> desde el primer día, con código reproducible, <code>.env.example</code>, <code>.gitignore</code>, <code>Dockerfile</code> y README del equipo.</li>
+<li><strong>API en local y en Render</strong>, con Swagger abierto en la URL pública.</li>
+<li><strong>PostgreSQL</strong> con historial que <strong>sigue ahí después de un redeploy</strong>.</li>
+<li><strong>Front Streamlit</strong> configurado contra la URL de Render (chat, historial leído de la API, HITL).</li>
+<li><strong>URL del despliegue</strong>, enviada al profesorado. Con esa URL tenemos que poder entrar al producto: <code>/docs</code> y <code>/health</code> abren. Para probar <code>/ask</code> y el historial, adjuntad la API key de demo por el canal de entrega (no la subáis al repositorio).</li>
+<li><strong>Informe breve</strong> (<code>entregables/informe_decisiones.md</code>), con las conclusiones de arquitectura, coste y CI/CD.</li>
+<li><strong>Presentación final</strong> (~10 min) en vivo o vídeo; <strong>sólo se permite un vídeo por grupo</strong>. La demo de producto se hace contra la <strong>URL desplegada</strong>.</li>
+</ol>
+<hr /></div>
+<h3>Stack de referencia</h3>
+<p>Python · FastAPI · Pydantic · SQLModel · PostgreSQL · Docker · Render · Streamlit como cliente HTTP · el LLM y el RAG que ya usabais en el PB2 (Gemini, si seguís el módulo).</p>
+<hr />
+<h3>Requisitos técnicos</h3>
+<ul>
+<li>Python 3.10+</li>
+<li>Claves solo en <code>.env</code> local y en el panel de Render</li>
+</ul>
+<pre><code class="language-bash">python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env        # DATABASE_URL, API_KEY, clave del LLM
+</code></pre>
+<p>La imagen tiene que arrancar así, en espíritu:</p>
+<pre><code class="language-dockerfile">CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
+</code></pre>
+<hr />
+<h3>Plan de 2 semanas</h3>
+<table>
+<thead>
+<tr>
+<th>Semana</th>
+<th>Orientación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td>Partes 1–3: contrato, agente en la API, Postgres, seguridad, front contra local</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Parte 4: Docker, Render, front contra la URL pública, informe, presentación</td>
+</tr>
+</tbody>
+</table>
+<p>Dejad el deploy para cuando <code>/ask</code> y el historial ya funcionen en local. Render no depura un grafo roto.</p>
+<hr />
+<h3>Presentación final (~10 min)</h3>
+<p><strong>Fecha:</strong> viernes 4 de diciembre, de 16:00 a 18:00.</p>
+<p><strong>Obligatoria.</strong> En vivo o en <strong>vídeo</strong>. <strong>Sólo se permite un vídeo por grupo.</strong></p>
+<p>Si presentáis en vivo, el vídeo de respaldo cubre un fallo de red o de cold start. Arrancad la URL un minuto antes: el free tier puede estar dormido.</p>
+<h4>Guion de tiempo (orientativo)</h4>
+<table>
+<thead>
+<tr>
+<th>Bloque</th>
+<th>Tiempo</th>
+<th>Enfoque</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A · Producto</td>
+<td>~4 min</td>
+<td>El mismo agente de siempre, ahora en una URL. Demo en el front</td>
+</tr>
+<tr>
+<td>B · Técnico</td>
+<td>~6 min</td>
+<td>Contrato, Postgres, Docker, Render</td>
+</tr>
+</tbody>
+</table>
+<h4>A · Producto (~4 min)</h4>
+<ul class="task-list">
+<li>El problema, en una frase, y la URL pública.</li>
+<li>Front contra Render: una pregunta de dominio.</li>
+<li>Historial que sale de <code>GET …/messages</code>.</li>
+<li>HITL: aprobar <strong>o</strong> rechazar, y el efecto en pantalla.</li>
+</ul>
+<h4>B · Técnico (~6 min)</h4>
+<ul class="task-list">
+<li>Swagger de la URL pública (<code>/docs</code>).</li>
+<li><code>/health</code> y un 401 (sin clave).</li>
+<li>Dónde está el agente (la ruta llama a <code>procesar_turno</code>; el front no lo importa).</li>
+<li>Postgres: tablas, y el turno que sigue tras el redeploy.</li>
+<li><code>Dockerfile</code> (<code>PORT</code>, RAG dentro de la imagen).</li>
+<li>Variables en el panel de Render, sin enseñar los valores.</li>
+<li>Conclusiones: un límite real, coste de infra y de un turno, y el criterio de CI/CD (qué comprobaríais y cómo volvéis atrás).</li>
+<li>3 fallos conocidos.</li>
+</ul>
+<hr />
+<h3>Checklist del proyecto</h3>
+<ul class="task-list">
+<li>Repo GitHub desde el día 1 · PRs · <code>main</code> despliega</li>
+<li>Mismo dominio que el PB2 · agente reutilizado</li>
+<li><code>/docs</code> en local y en Render</li>
+<li><code>/ask</code> y <code>/approve</code> con el contrato (<code>auto_aprobar</code>, <code>pendiente_hitl</code>)</li>
+<li>Postgres local y Postgres de Render · historial tras redeploy</li>
+<li>401 · 429 · 504 · logs con <code>thread_id</code> y <code>duration_ms</code></li>
+<li><code>Dockerfile</code> con <code>0.0.0.0</code> y <code>${PORT:-8000}</code> · RAG dentro</li>
+<li>Front contra la URL de Render: health, chat, historial, HITL</li>
+<li>URL de despliegue enviada al profesorado, para poder entrar</li>
+<li>README + <code>.env.example</code> + sin secretos</li>
+<li>Informe (dibujo, contrato, Postgres vs MemorySaver, prueba de vida, conclusiones de arquitectura/coste y de CI/CD, 3 fallos)</li>
+<li>Presentación ~10 min (<strong>sólo se permite un vídeo por grupo</strong>)</li>
+<li>Entrega hecha <strong>antes del 26/11 a las 23:59</strong></li>
+<li>Presentación el <strong>viernes 4/12, de 16:00 a 18:00</strong></li>
+</ul>
+<hr />
+</section>
+<section id="evaluacion">
+<h2>¿Cómo se evalúa el proyecto?</h2>
+<p>El proyecto se valora en <strong>seis áreas</strong>. La mayoría son de <strong>equipo</strong>; una es <strong>individual</strong> (aportación real en Git). Los porcentajes son el <strong>peso sobre la nota</strong>.</p>
+<p>Las cinco áreas base suman el <strong>100 %</strong>: Desarrollo Técnico (35 %), Presentación (23 %), Git (17 %), Trabajo en equipo (15 %) y Memoria (10 %). Los <strong>Extras</strong> suman aparte, hasta un <strong>+10 %</strong> adicional.</p>
+<div class="eval-area a-tecnico"><h4>⚙️ Desarrollo Técnico <span style="font-weight:600;color:var(--text-lt);font-size:0.9rem;">· equipo</span> <span class="pct-badge">35&nbsp;%</span></h4>
+<ul>
+<li><strong>API:</strong> contrato claro, Swagger usable, el agente del PB2 detrás de <code>/ask</code> y <code>/approve</code>.</li>
+<li><strong>Datos:</strong> Postgres de verdad; el historial sobrevive a un redeploy.</li>
+<li><strong>Deploy:</strong> una imagen, <code>PORT</code>, URL pública enviada al profesorado, secretos fuera del repo.</li>
+<li><strong>Front:</strong> cliente HTTP de esa URL (health, chat, historial, HITL).</li>
+<li><strong>Robustez:</strong> 401, tope de peticiones, timeout, logs sin secretos.</li>
+</ul>
+<div class="warning">Publicar <code>/ask</code> sin API key, guardar el historial solo en SQLite del portátil, o un front que importa el grafo, son errores graves.</p>
+<p>Los nombres de ficheros del enunciado son <strong>orientativos</strong>. Se evalúa el comportamiento: FastAPI, Swagger, PostgreSQL, Docker, Render y un front contra la URL pública.</div></div>
+<div class="eval-area a-present"><h4>🎤 Presentación <span style="font-weight:600;color:var(--text-lt);font-size:0.9rem;">· equipo</span> <span class="pct-badge">23&nbsp;%</span></h4>
+<ul>
+<li>Expresión oral clara y repartida.</li>
+<li>Demo del front <strong>contra Render</strong>, más Swagger de esa misma URL.</li>
+<li>Narrativa con hilo: PB1 (RAG) → PB2 (agente) → esta URL.</li>
+</ul></div>
+<div class="eval-area a-git"><h4>🌿 Git <span style="font-weight:600;color:var(--text-lt);font-size:0.9rem;">· equipo</span> <span class="pct-badge">17&nbsp;%</span></h4>
+<ul>
+<li>Repo limpio, README que lleva de cero a la URL, ramas/PRs, <code>main</code> desplegable.</li>
+<li>Sin secretos.</li>
+</ul></div>
+<div class="eval-area a-equipo"><h4>👥 Trabajo en equipo <span style="font-weight:600;color:var(--text-lt);font-size:0.9rem;">· individual</span> <span class="pct-badge">15&nbsp;%</span></h4>
+<p>Según historial Git: volumen, consistencia, calidad de commits/PRs, revisión de compañeras/os.</p>
+<div class="warning">Sin presencia objetiva en Git, esta área puede no superarse de forma individual.</div></div>
+<div class="eval-area a-memoria"><h4>📝 Memoria <span style="font-weight:600;color:var(--text-lt);font-size:0.9rem;">· equipo</span> <span class="pct-badge">10&nbsp;%</span></h4>
+<p>El informe cierra con conclusiones del sistema desplegado: arquitectura, un límite real, coste de infra y de un turno, y el criterio de CI/CD (qué se comprobaría, dónde viven los secretos, cómo se despliega y cómo se vuelve atrás). Contar el temario sin aplicarlo a su URL no puntúa.</p></div>
+<div class="eval-area a-extra"><h4>✨ Extras <span class="optional-badge">Opcional</span> <span class="pct-badge bonus">+10&nbsp;%</span></h4>
+<p>Por ejemplo un CI con GitHub Actions, la abstención del RAG enseñada desde Swagger en la URL pública, multimodal desde el front, o un <strong>uso sostenido de SDD</strong>. Los extras <strong>no</strong> sustituyen los requisitos obligatorios.</p>
+<p><strong>En resumen:</strong> el agente del PB2 queda publicado. Swagger enseña el contrato, Postgres guarda el historial, Docker y Render lo sirven, y el front habla con esa URL.</p></div>
+</section>
+
+</div>
+
+<footer>
+    <p>Project Break 3 · MLOps: API, datos y deploy</p>
+    <p>Bootcamp IA Generativa · The Bridge Tech</p>
+</footer>
+
+<script>
+    // Los checklists se pueden tachar al hacer clic
+    document.querySelectorAll('.task-list li').forEach(function (li) {
+        li.addEventListener('click', function () {
+            li.classList.toggle('done');
+        });
+    });
+</script>
+
+</body>
+</html>
